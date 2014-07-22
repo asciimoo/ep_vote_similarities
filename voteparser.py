@@ -7,7 +7,7 @@ meps = {}
 
 vote_types = ('For', 'Against', 'Abstain')
 
-def parse(outprefix, from_date, to_date=None, ep_refs=None):
+def parse(outprefix, from_date, to_date=None, ep_refs=None, only_count=False):
     with open('ep_votes.json') as infile:
         infile.seek(1)
         line = infile.readline().strip()
@@ -49,11 +49,18 @@ def parse(outprefix, from_date, to_date=None, ep_refs=None):
     stderr.write('[parsing done]\n')
 
     with open(outprefix+'_vote_counts.csv', 'w') as outfile:
-        outfile.write('mep\tvote_count\n')
+        outfile.write('mep\tfor\tagainst\tabstain\tsum\n')
         for mep in meps:
-            outfile.write('{0}\t{1}\n'.format(mep, sum(len(x) for x in meps[mep])))
+            outfile.write('{0}\t{1}\t{2}\t{3}\t{4}\n'.format(mep,
+                                                             len(meps[mep][0]),
+                                                             len(meps[mep][1]),
+                                                             len(meps[mep][2]),
+                                                             sum(len(x) for x in meps[mep])))
 
     stderr.write('[vote counts done]\n')
+
+    if only_count:
+        return
 
     with open(outprefix+'_same_votes.csv', 'w') as outfile:
         outfile.write('mep1\tmep2\tsame_vote_count\n')
@@ -74,9 +81,15 @@ if __name__ == '__main__':
 run
  python voteparser.py <output prefix> <from-date> <end-date>
 or
-python voteparser.py <output prefix> <from-date> <end-date> <reference list file>''')
+ python voteparser.py <output prefix> <from-date> <end-date> <reference list file>
+
+use --count to get only the vote counts''')
         exit(1)
 
+    count = False
+    if '--count' in argv:
+        argv.remove('--count')
+        count = True
     prefix = argv[1]
     from_date = parser.parse(argv[2])
     to_date = parser.parse(argv[3])
@@ -87,4 +100,4 @@ python voteparser.py <output prefix> <from-date> <end-date> <reference list file
     else:
         ep_refs = None
 
-    parse(prefix, from_date, to_date, ep_refs)
+    parse(prefix, from_date, to_date, ep_refs, only_count=count)
